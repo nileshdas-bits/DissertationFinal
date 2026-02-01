@@ -1,0 +1,42 @@
+experiment_name: fi2010_gru_regression
+seed: 42
+
+data:
+  raw_dir: ./data/raw/fi2010
+  processed_dir: ./data/processed
+  file_patterns:
+    - "*.txt"
+    - "*.csv"
+
+label:
+  tau: 10
+  task: regression
+  epsilon: 0.0002
+
+window:
+  lookback: 50
+  mode: sequence
+
+split:
+  train_ratio: 0.70
+  val_ratio: 0.15
+  test_ratio: 0.15
+  purge_boundary: true
+
+normalization:
+  method: zscore
+
+model:
+  name: gru
+  params:
+    hidden_size: 64
+    num_layers: 2
+    dropout: 0.2
+    bidirectional: false
+
+training:
+  batch_size: 256
+  epochs: 100
+  learning_rate: 0.001
+  early_stopping_patience: 15
+  device: auto

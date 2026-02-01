@@ -1,0 +1,36 @@
+experiment_name: fi2010_classification
+seed: 42
+
+data:
+  raw_dir: ./data/raw/fi2010
+  train_glob: "Train_Dst_NoAuction_ZScore_CF_*.txt"
+  test_glob: "Test_Dst_NoAuction_ZScore_CF_*.txt"
+  fold_id: "all"
+
+label:
+  source: provided
+  horizon_index: 0
+  task: classification
+
+window:
+  lookback: 1
+  mode: flat
+
+normalization:
+  method: none
+
+model:
+  name: random_forest
+  params:
+    n_estimators: 100
+    max_depth: 10
+    min_samples_split: 5
+    min_samples_leaf: 2
+    class_weight: balanced
+
+training:
+  batch_size: 256
+  epochs: 1
+  learning_rate: 0.001
+  early_stopping_patience: 10
+  device: auto

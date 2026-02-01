@@ -1,0 +1,4 @@
+# Place FI-2010 dataset files here
+# Expected files:
+#   Train_Dst_NoAuction_ZScore_CF_1.txt ... CF_9.txt
+#   Test_Dst_NoAuction_ZScore_CF_1.txt ... CF_9.txt

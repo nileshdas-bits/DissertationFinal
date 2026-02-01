@@ -1,0 +1,40 @@
+experiment_name: fi2010_classification
+seed: 42
+
+data:
+  raw_dir: ./data/raw/fi2010
+  train_glob: "Train_Dst_NoAuction_ZScore_CF_*.txt"
+  test_glob: "Test_Dst_NoAuction_ZScore_CF_*.txt"
+  fold_id: "all"
+
+label:
+  source: provided
+  horizon_index: 0
+  task: classification
+
+window:
+  lookback: 50  # Sequence length W
+  mode: sequence
+
+normalization:
+  method: none
+
+model:
+  name: autoencoder
+  params:
+    hidden_size: 64
+    latent_size: 32
+    num_layers: 2
+    dropout: 0.2
+
+training:
+  batch_size: 256
+  epochs: 100  # Fallback if two_stage=false
+  learning_rate: 0.001
+  early_stopping_patience: 10
+  device: auto
+  # Two-stage training for autoencoder
+  two_stage: true
+  pretrain_epochs: 30   # Stage A: reconstruction pretraining
+  finetune_epochs: 50   # Stage B: classification fine-tuning
+  freeze_encoder: true  # Freeze encoder during fine-tuning

@@ -1,0 +1,35 @@
+experiment_name: fi2010_classification
+seed: 42
+
+data:
+  raw_dir: ./data/raw/fi2010
+  train_glob: "Train_Dst_NoAuction_ZScore_CF_*.txt"
+  test_glob: "Test_Dst_NoAuction_ZScore_CF_*.txt"
+  fold_id: "all"
+
+label:
+  source: provided
+  horizon_index: 0
+  task: classification
+
+window:
+  lookback: 50  # Sequence length W
+  mode: sequence  # Required for TCN
+
+normalization:
+  method: none
+
+model:
+  name: tcn
+  params:
+    num_channels: [64, 64, 64, 64]  # 4 blocks with dilations 1,2,4,8
+    kernel_size: 3
+    dropout: 0.2
+    pooling: last  # "last" or "avg"
+
+training:
+  batch_size: 256
+  epochs: 50
+  learning_rate: 0.001
+  early_stopping_patience: 10
+  device: auto

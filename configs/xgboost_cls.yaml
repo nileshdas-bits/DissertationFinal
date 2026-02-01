@@ -1,0 +1,38 @@
+experiment_name: fi2010_classification
+seed: 42
+
+data:
+  raw_dir: ./data/raw/fi2010
+  train_glob: "Train_Dst_NoAuction_ZScore_CF_*.txt"
+  test_glob: "Test_Dst_NoAuction_ZScore_CF_*.txt"
+  fold_id: "all"
+
+label:
+  source: provided
+  horizon_index: 0
+  task: classification
+
+window:
+  lookback: 1
+  mode: flat
+
+normalization:
+  method: none
+
+model:
+  name: xgboost
+  params:
+    n_estimators: 500
+    max_depth: 6
+    learning_rate: 0.1
+    subsample: 0.8
+    colsample_bytree: 0.8
+    tree_method: hist
+    early_stopping_rounds: 20
+
+training:
+  batch_size: 256
+  epochs: 1
+  learning_rate: 0.001
+  early_stopping_patience: 10
+  device: auto

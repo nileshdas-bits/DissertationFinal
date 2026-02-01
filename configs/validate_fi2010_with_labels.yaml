@@ -1,0 +1,6 @@
+dataset:
+  data_dir: "data/raw/fi2010"
+  train_glob: "Train_Dst_NoAuction_ZScore_CF_*.txt"
+  test_glob: "Test_Dst_NoAuction_ZScore_CF_*.txt"
+  return_provided_labels: true
+  label_format: "signed"
