@@ -1,27 +1,23 @@
-experiment_name: fi2010_ridge_regression
+experiment_name: fi2010_ridge_classification
 seed: 42
 
 data:
   raw_dir: ./data/raw/fi2010
-  processed_dir: ./data/processed
-  file_patterns:
-    - "*.txt"
-    - "*.csv"
+  train_glob: "Train_Dst_NoAuction_ZScore_CF_*.txt"
+  test_glob: "Test_Dst_NoAuction_ZScore_CF_*.txt"
+  fold_id: "all"
 
 label:
-  tau: 10
-  task: regression
-  epsilon: 0.0002
+  source: provided
+  horizon_index: 0
+  task: classification
 
+# IMPORTANT:
+# Ridge cannot consume sequence tensors directly.
+# We flatten the window into a tabular feature vector.
 window:
   lookback: 50
   mode: tabular_flat
-
-split:
-  train_ratio: 0.70
-  val_ratio: 0.15
-  test_ratio: 0.15
-  purge_boundary: true
 
 normalization:
   method: zscore
@@ -32,8 +28,10 @@ model:
     alpha: 1.0
 
 training:
-  batch_size: 256
-  epochs: 100
+  # These are largely ignored by sklearn ridge,
+  # but kept for config compatibility
+  batch_size: 1024
+  epochs: 1
   learning_rate: 0.001
-  early_stopping_patience: 10
-  device: auto
+  early_stopping_patience: 0
+  device: cpu
