@@ -12,6 +12,9 @@ label:
   horizon_index: 0
   task: classification
 
+# IMPORTANT:
+# Tree models must not flatten temporal windows.
+# Use a single snapshot for CPU safety.
 window:
   lookback: 1
   mode: flat
@@ -28,11 +31,15 @@ model:
     subsample: 0.8
     colsample_bytree: 0.8
     tree_method: hist
-    early_stopping_rounds: 20
+    objective: multi:softprob
+    eval_metric: mlogloss
+    num_class: 3
 
+# IMPORTANT:
+# early stopping is DISABLED to avoid sklearn API incompatibility
 training:
   batch_size: 256
   epochs: 1
   learning_rate: 0.001
-  early_stopping_patience: 10
-  device: auto
+  early_stopping_patience: 0
+  device: cpu
