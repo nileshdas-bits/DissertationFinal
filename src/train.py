@@ -151,7 +151,7 @@ def create_model(config: Config, input_shape: Tuple[int, ...]):
     
     if model_name == "ridge":
         from .models.ridge import RidgeModel
-        return RidgeModel(task=task, **params)
+        return RidgeModel(task=task, random_state=config.seed, **params)
     
     elif model_name == "random_forest":
         from .models.random_forest import RandomForestModel

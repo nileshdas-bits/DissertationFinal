@@ -1,10 +1,34 @@
 """XGBoost model."""
+import inspect
+import logging
 from typing import Any, Dict, Optional
 
 import numpy as np
 import xgboost as xgb
 
 from .base import BaseModel
+
+logger = logging.getLogger(__name__)
+
+
+def _supports_fit_param(estimator, param_name: str) -> bool:
+    """Check if estimator.fit() accepts a given parameter."""
+    try:
+        sig = inspect.signature(estimator.fit)
+        return param_name in sig.parameters or any(
+            p.kind == inspect.Parameter.VAR_KEYWORD for p in sig.parameters.values()
+        )
+    except (ValueError, TypeError):
+        return False
+
+
+def _get_early_stopping_callback(rounds: int):
+    """Get early stopping callback if available."""
+    try:
+        from xgboost.callback import EarlyStopping
+        return EarlyStopping(rounds=rounds, save_best=True)
+    except ImportError:
+        return None
 
 
 class XGBoostModel(BaseModel):
@@ -36,6 +60,7 @@ class XGBoostModel(BaseModel):
         self.n_jobs = n_jobs
         self.kwargs = kwargs
         self.evals_result_: Dict[str, Any] = {}
+        self._early_stopping_enabled = False
         
         params = {
             "n_estimators": n_estimators,
@@ -51,7 +76,9 @@ class XGBoostModel(BaseModel):
         
         # Remove None values and add kwargs
         params = {k: v for k, v in params.items() if v is not None}
-        params.update(kwargs)
+        # Remove early_stopping_rounds from constructor params if present
+        params.pop("early_stopping_rounds", None)
+        params.update({k: v for k, v in kwargs.items() if k != "early_stopping_rounds"})
         
         if task == "regression":
             self.model = xgb.XGBRegressor(**params)
@@ -78,11 +105,17 @@ class XGBoostModel(BaseModel):
                 y_val = y_val.astype(int)
         
         fit_params = {}
+        self._early_stopping_enabled = False
+        
         if X_val is not None and y_val is not None:
-            fit_params["eval_set"] = [(X_train, y_train), (X_val, y_val)]
+            if _supports_fit_param(self.model, "eval_set"):
+                fit_params["eval_set"] = [(X_train, y_train), (X_val, y_val)]
+            
+            if _supports_fit_param(self.model, "verbose"):
+                fit_params["verbose"] = False
+            
             if self.early_stopping_rounds:
-                fit_params["early_stopping_rounds"] = self.early_stopping_rounds
-            fit_params["verbose"] = False
+                self._early_stopping_enabled = self._configure_early_stopping(fit_params)
         
         self.model.fit(X_train, y_train, **fit_params)
         
@@ -91,6 +124,32 @@ class XGBoostModel(BaseModel):
             self.evals_result_ = self.model.evals_result()
         
         return self
+    
+    def _configure_early_stopping(self, fit_params: Dict[str, Any]) -> bool:
+        """Configure early stopping in a version-safe manner.
+        
+        Returns True if early stopping was successfully configured.
+        """
+        rounds = self.early_stopping_rounds
+        
+        # Try callback-based early stopping first (preferred for newer versions)
+        callback = _get_early_stopping_callback(rounds)
+        if callback is not None and _supports_fit_param(self.model, "callbacks"):
+            fit_params["callbacks"] = [callback]
+            logger.info(f"XGBoost early stopping enabled: rounds={rounds} (callback)")
+            return True
+        
+        # Try direct early_stopping_rounds parameter (older versions)
+        if _supports_fit_param(self.model, "early_stopping_rounds"):
+            fit_params["early_stopping_rounds"] = rounds
+            logger.info(f"XGBoost early stopping enabled: rounds={rounds}")
+            return True
+        
+        logger.warning(
+            "Early stopping not supported by installed xgboost; "
+            "proceeding without early stopping"
+        )
+        return False
     
     def predict(self, X: np.ndarray) -> np.ndarray:
         assert X.ndim == 2, f"Expected 2D input, got {X.ndim}D"

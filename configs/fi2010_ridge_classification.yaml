@@ -1,4 +1,4 @@
-experiment_name: fi2010_classification
+experiment_name: fi2010_ridge_classification
 seed: 42
 
 data:
@@ -20,15 +20,9 @@ normalization:
   method: none
 
 model:
-  name: xgboost
+  name: ridge
   params:
-    n_estimators: 500
-    max_depth: 6
-    learning_rate: 0.1
-    subsample: 0.8
-    colsample_bytree: 0.8
-    tree_method: hist
-    early_stopping_rounds: 20
+    alpha: 1.0
 
 training:
   batch_size: 256
