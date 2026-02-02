@@ -1,6 +1,8 @@
 """Main training entrypoint with uniform run logging."""
 import argparse
 import json
+import os
+import sys
 from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, Optional, Tuple
@@ -37,11 +39,40 @@ def generate_run_id(config: Config) -> str:
     return f"{model_name}_h{horizon}_f{fold}_w{window}_{timestamp}"
 
 
-def get_runs_dir() -> Path:
-    """Get runs directory."""
-    runs_dir = get_project_root() / "runs"
-    runs_dir.mkdir(parents=True, exist_ok=True)
-    return runs_dir
+def is_colab() -> bool:
+    """Check if running in Google Colab."""
+    return "google.colab" in sys.modules or os.environ.get("COLAB_GPU") is not None
+
+
+def is_drive_mounted() -> bool:
+    """Check if Google Drive is mounted."""
+    return Path("/content/drive/MyDrive").exists()
+
+
+def resolve_runs_dir(config: Config) -> Path:
+    """Resolve the runs directory based on config and environment.
+
+    Resolution order:
+    1. Explicit config.output.runs_dir if set
+    2. Google Drive path if running in Colab with Drive mounted
+    3. Local project runs directory
+    """
+    if config.output.runs_dir:
+        base = Path(config.output.runs_dir).expanduser()
+        if not base.is_absolute():
+            base = get_project_root() / base
+        base.mkdir(parents=True, exist_ok=True)
+        return base
+
+    if is_colab() and is_drive_mounted():
+        repo_name = get_project_root().name
+        base = Path("/content/drive/MyDrive") / repo_name / "runs"
+        base.mkdir(parents=True, exist_ok=True)
+        return base
+
+    base = get_project_root() / "runs"
+    base.mkdir(parents=True, exist_ok=True)
+    return base
 
 
 def load_fi2010_data(config: Config) -> Dict[str, Any]:
@@ -317,7 +348,10 @@ def main():
     logger = get_logger()
     
     run_id = generate_run_id(config)
-    run_dir = get_runs_dir() / run_id
+    runs_dir = resolve_runs_dir(config)
+    logger.info(f"Resolved runs directory: {runs_dir}")
+    run_dir = runs_dir / run_id
+    run_dir.mkdir(parents=True, exist_ok=True)
     
     logger.info(f"Run ID: {run_id}")
     logger.info(f"Run directory: {run_dir}")

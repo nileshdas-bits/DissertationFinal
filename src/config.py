@@ -72,6 +72,12 @@ class TrainingConfig:
 
 
 @dataclass
+class OutputConfig:
+    """Output configuration."""
+    runs_dir: Optional[str] = None
+
+
+@dataclass
 class Config:
     """Main configuration."""
     experiment_name: str = "default"
@@ -83,6 +89,7 @@ class Config:
     normalization: NormalizationConfig = field(default_factory=NormalizationConfig)
     model: ModelConfig = field(default_factory=ModelConfig)
     training: TrainingConfig = field(default_factory=TrainingConfig)
+    output: OutputConfig = field(default_factory=OutputConfig)
     
     @classmethod
     def from_yaml(cls, path: Path) -> "Config":
@@ -104,6 +111,7 @@ class Config:
             normalization=NormalizationConfig(**d.get("normalization", {})),
             model=ModelConfig(**d.get("model", {})),
             training=TrainingConfig(**d.get("training", {})),
+            output=OutputConfig(**d.get("output", {})),
         )
     
     def to_dict(self) -> Dict[str, Any]:
@@ -118,6 +126,7 @@ class Config:
             "normalization": self.normalization.__dict__,
             "model": self.model.__dict__,
             "training": self.training.__dict__,
+            "output": self.output.__dict__,
         }
     
     def validate(self) -> None:
